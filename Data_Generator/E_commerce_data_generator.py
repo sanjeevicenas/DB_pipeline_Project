@@ -24,6 +24,66 @@ def generate_customer():
     customers.append(customer["customer_id"])
     return customer
 
+def generate_product():
+    categories = ['Electronics', 'Books', 'Clothing', 'Home & Garden']
+    product = {
+        "product_id": fake.uuid4(),
+        "name": fake.word().title(),
+        "category": random.choice(categories),
+        "price": round(random.uniform(10, 500), 2),
+        "stock_quantity": random.randint(0, 100),
+        "supplier": fake.company(),
+        "rating": round(random.uniform(1, 5), 1)
+    }
+    products.append(product["product_id"])
+    return product
+
+def generate_transaction():
+    customer_id = random.choice(customers)
+    product_id = random.choice(products)
+    return {
+        "transaction_id": fake.uuid4(),
+        "customer_id": customer_id,
+        "product_id": product_id,
+        "quantity": random.randint(1, 5),
+        "date_time": fake.date_time_this_year().isoformat(),
+        "status": random.choice(["completed", "pending", "canceled"]),
+        "payment_method": random.choice(["credit card", "PayPal", "bank transfer"])
+    }
+
+# Generate Product View Data
+def generate_product_view():
+    return {
+        "view_id": fake.uuid4(),
+        "customer_id": random.choice(customers),
+        "product_id": random.choice(products),
+        "timestamp": fake.date_time_this_year().isoformat(),
+        "view_duration": random.randint(10, 300)  # Duration in seconds
+    }
+
+# Generate System Log Data
+def generate_system_log():
+    log_levels = ["INFO", "WARNING", "ERROR"]
+    return {
+        "log_id": fake.uuid4(),
+        "timestamp": fake.date_time_this_year().isoformat(),
+        "level": random.choice(log_levels),
+        "message": fake.sentence()
+    }
+
+# Generate User Interaction Data
+def generate_user_interaction():
+    interaction_types = ["wishlist_addition", "review", "rating"]
+    return {
+        "interaction_id": fake.uuid4(),
+        "customer_id": random.choice(customers),
+        "product_id": random.choice(products),
+        "timestamp": fake.date_time_this_year().isoformat(),
+        "interaction_type": random.choice(interaction_types),
+        "details": fake.sentence() if interaction_types == "review" else None
+    }
+
+
 a = generate_customer()
 print(a)
 

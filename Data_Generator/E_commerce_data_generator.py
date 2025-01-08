@@ -3,9 +3,18 @@ import random
 import time
 from datetime import datetime
 from faker import Faker
+from kafka import KafkaProducer
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 fake = Faker()
+
+# Kafka configuration
+kafka_broker = os.getenv('KAFKA_BROKER', 'broker:9092')
+producer = KafkaProducer(
+    bootstrap_servers=[kafka_broker],
+    value_serializer=lambda x: json.dumps(x).encode('utf-8')
+)
 
 customers = []
 products = []
@@ -51,7 +60,6 @@ def generate_transaction():
         "payment_method": random.choice(["credit card", "PayPal", "bank transfer"])
     }
 
-# Generate Product View Data
 def generate_product_view():
     return {
         "view_id": fake.uuid4(),
@@ -61,7 +69,6 @@ def generate_product_view():
         "view_duration": random.randint(10, 300)  # Duration in seconds
     }
 
-# Generate System Log Data
 def generate_system_log():
     log_levels = ["INFO", "WARNING", "ERROR"]
     return {
@@ -71,7 +78,6 @@ def generate_system_log():
         "message": fake.sentence()
     }
 
-# Generate User Interaction Data
 def generate_user_interaction():
     interaction_types = ["wishlist_addition", "review", "rating"]
     return {
@@ -83,8 +89,35 @@ def generate_user_interaction():
         "details": fake.sentence() if interaction_types == "review" else None
     }
 
+def send_data():
+    # Occasionally add new customers or products
+    if random.random() < 0.5:
+        customer = generate_customer()
+        producer.send('ecommerce_customers', value=customer)
+    else:
+        product = generate_product()
+        producer.send('ecommerce_products', value=product)
 
-a = generate_customer()
-print(a)
+    # Higher chance to create transactions and interactions
+    if customers and products:
+        transaction = generate_transaction()
+        producer.send('ecommerce_transactions', value=transaction)
+        product_view = generate_product_view()
+        if product_view:
+            producer.send('ecommerce_product_views', value=product_view)
+        user_interaction = generate_user_interaction()
+        if user_interaction:
+            producer.send('ecommerce_user_interactions', value=user_interaction)
 
-
+# Main execution block
+if __name__ == "__main__":
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        try:
+            while True:
+                executor.submit(send_data)
+                time.sleep(random.uniform(0.01, 0.1))
+        except KeyboardInterrupt:
+            print("\nStopping data generation...")
+        finally:
+            producer.close()
+            print("Kafka producer closed.")
